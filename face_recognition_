@@ -1,0 +1,118 @@
+import face_recognition
+
+import cv2
+
+import numpy as np
+
+import base64
+
+import io
+
+from PIL import Image
+
+
+
+
+
+
+
+
+def encode_face(image_data):
+
+    """
+
+    Encode face from base64 image data.
+
+    """
+
+    image = Image.open(io.BytesIO(base64.b64decode(image_data)))
+
+    image = np.array(image)
+
+    face_encodings = face_recognition.face_encodings(image)
+
+    if face_encodings:
+
+        return face_encodings[0].tobytes()
+
+    return None
+
+
+def recognize_face(image_data, known_encodings):
+
+    """
+
+    Recognize face from image data against known encodings.
+
+    """
+
+    image = Image.open(io.BytesIO(base64.b64decode(image_data)))
+
+    image = np.array(image)
+
+    face_encodings = face_recognition.face_encodings(image)
+
+    if not face_encodings:
+
+        return None
+
+    face_encoding = face_encodings[0]
+
+    matches = face_recognition.compare_faces(known_encodings, face_encoding)
+
+    face_distances = face_recognition.face_distance(known_encodings, face_encoding)
+
+    best_match_index = np.argmin(face_distances)
+
+    if matches[best_match_index]:
+
+        return best_match_index
+
+    return None
+
+
+def capture_face_from_camera():
+
+    """
+
+    Capture face from camera (for testing).
+
+    """
+
+    cap = cv2.VideoCapture(0)
+
+    while True:
+
+        ret, frame = cap.read()
+
+        if not ret:
+
+            break
+
+        rgb_frame = frame[:, :, ::-1]
+
+        face_locations = face_recognition.face_locations(rgb_frame)
+
+        if face_locations:
+
+            face_encoding = face_recognition.face_encodings(rgb_frame, face_locations)[0]
+
+            cap.release()
+
+            cv2.destroyAllWindows()
+
+            return face_encoding.tobytes()
+
+        cv2.imshow('Capture Face', frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+
+            break
+
+    cap.release()
+
+    cv2.destroyAllWindows()
+
+    return None
+
+
